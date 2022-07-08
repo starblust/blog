@@ -1,0 +1,24 @@
+{
+  "name": "blog",
+  "version": "1.0.0",
+  "description": "my personal blog",
+  "private": true,
+  "type": "module",
+  "main": "app/server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app/server.js"
+  },
+  "keywords": [
+    "blog",
+    "personal",
+    "articles",
+    "thoughts"
+  ],
+  "author": "Artemij",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^18.0.1",
+    "eslint": "^8.19.0"
+  }
+}
