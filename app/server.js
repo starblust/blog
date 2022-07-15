@@ -1,14 +1,19 @@
 import { createServer } from 'node:http';
-import { readFileSync } from 'node:fs';
 import { URL } from 'node:url';
 import routes from './routes/routes.js';
 import path from 'node:path';
-import { ReadStream } from 'node:fs';
 import { pipeline } from 'node:stream/promises';
 import { getViewCreator } from './lib/app.js';
-import { accessSync, constants, mkdirSync } from 'node:fs';
+import { accessSync, constants, mkdirSync, rmSync, readFileSync, ReadStream, writeFileSync } from 'node:fs';
 
 const root_dir = new URL('..', import.meta.url).pathname;
+
+try {
+    accessSync(path.join(root_dir, '.env.config.json'), constants.F_OK | constants.R_OK);
+} catch (e) {
+    console.error(e);
+    writeFileSync(path.join(root_dir, '.env.config.json'), '{}', {flag: 'w'});
+}
 
 let static_config =  {
     ...JSON.parse(readFileSync(new URL('./.config.json', import.meta.url))),
@@ -26,10 +31,10 @@ const config = {
 
 static_config = null;
 
-// TODO
-// create .env.config.json
 try {
-    accessSync(path.join(config.cache_dir, 'pages'), constants.R_OK | constants.W_OK);
+    accessSync(path.join(config.cache_dir, 'pages'), constants.F_OK | constants.R_OK | constants.W_OK);
+    rmSync(path.join(config.cache_dir, 'pages'), {recursive: true});
+    mkdirSync(path.join(config.cache_dir, 'pages'), { recursive: true });
 } catch (e) {
     mkdirSync(path.join(config.cache_dir, 'pages'), { recursive: true });
 }
