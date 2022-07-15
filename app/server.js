@@ -26,6 +26,8 @@ const config = {
 
 static_config = null;
 
+// TODO
+// create .env.config.json
 try {
     accessSync(path.join(config.cache_dir, 'pages'), constants.R_OK | constants.W_OK);
 } catch (e) {
