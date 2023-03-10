@@ -1,23 +1,23 @@
 import { createServer } from 'node:http';
 import { URL } from 'node:url';
-import routes from './routes/routes.js';
-import path from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { getViewCreator } from './lib/app.js';
 import { accessSync, constants, mkdirSync, rmSync, readFileSync, ReadStream, writeFileSync } from 'node:fs';
+import routes from './routes/routes.js';
+import path from 'node:path';
 
 const root_dir = new URL('..', import.meta.url).pathname;
 
 try {
-    accessSync(path.join(root_dir, '.env.config.json'), constants.F_OK | constants.R_OK);
+    accessSync(path.join(root_dir, '.env.config.json'), constants.F_OK);
 } catch (e) {
     console.error(e);
-    writeFileSync(path.join(root_dir, '.env.config.json'), '{}', {flag: 'w'});
+    writeFileSync(path.join(root_dir, '.env.config.json'), '{}', { flag: 'w' });
 }
 
-let static_config =  {
-    ...JSON.parse(readFileSync(new URL('./.config.json', import.meta.url))),
-    ...JSON.parse(readFileSync(new URL('./../.env.config.json', import.meta.url)))
+let static_config = {
+    ...JSON.parse(readFileSync(new URL('./.config.json', import.meta.url)).toString()),
+    ...JSON.parse(readFileSync(new URL('./../.env.config.json', import.meta.url)).toString())
 };
 
 const config = {
@@ -33,7 +33,7 @@ static_config = null;
 
 try {
     accessSync(path.join(config.cache_dir, 'pages'), constants.F_OK | constants.R_OK | constants.W_OK);
-    rmSync(path.join(config.cache_dir, 'pages'), {recursive: true});
+    rmSync(path.join(config.cache_dir, 'pages'), { recursive: true });
     mkdirSync(path.join(config.cache_dir, 'pages'), { recursive: true });
 } catch (e) {
     mkdirSync(path.join(config.cache_dir, 'pages'), { recursive: true });
@@ -42,14 +42,14 @@ try {
 const app = {
     config,
     getView: getViewCreator(
-        { 
+        {
             config,
             shared_data: {
                 route_home: routes.home.name,
                 route_articles: routes.articles.name,
                 route_about: routes.about.name,
                 route_contacts: routes.contacts.name,
-            } 
+            }
         }
     ),
 };
@@ -63,11 +63,13 @@ const handleRequest = async ({ request, response }) => {
     }
     if (matchedRoute) {
         request.params = request.url.match(matchedRoute.rule).groups;
-        let status, headers, body;
+        let status,
+            headers,
+            body;
         try {
-            ({status, headers, body} = await matchedRoute.handler({ 
+            ({ status, headers, body } = await matchedRoute.handler({
                 request,
-                app, 
+                app,
             }));
         } catch (e) {
             response.writeHead(500, {});
@@ -88,9 +90,13 @@ const handleRequest = async ({ request, response }) => {
 };
 
 const server = createServer(async (request, response) => {
-    await handleRequest({request, response});
+    await handleRequest({ request, response });
 });
 
 server.listen(config.port, config.hostname);
+
+process.on('uncaughtException', function (error) {
+    console.error(`Uncaught exception: ${error} ${error.stack}`);
+});
 
 console.info(`Server running: http://${config.host}:${config.port}`);
