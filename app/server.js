@@ -3,6 +3,7 @@ import { URL } from 'node:url';
 import { pipeline } from 'node:stream/promises';
 import { getViewCreator } from './lib/app.js';
 import { accessSync, constants, mkdirSync, rmSync, readFileSync, ReadStream, writeFileSync } from 'node:fs';
+import { HttpCodes } from './lib/constants.js';
 import routes from './routes/routes.js';
 import path from 'node:path';
 
@@ -56,36 +57,29 @@ const app = {
 
 const handleRequest = async ({ request, response }) => {
     let matchedRoute = null;
-    for (let n in routes) {
-        if (routes[n].rule.test(request.url)) {
-            matchedRoute = routes[n];
+    try {
+        for (let n in routes) {
+            if (routes[n].rule.test(request.url)) {
+                matchedRoute = routes[n];
+            }
         }
-    }
-    if (matchedRoute) {
-        request.params = request.url.match(matchedRoute.rule).groups;
-        let status,
-            headers,
-            body;
-        try {
-            ({ status, headers, body } = await matchedRoute.handler({
-                request,
-                app,
-            }));
-        } catch (e) {
-            response.writeHead(500, {});
-            response.end();
-            console.error(e);
-            return;
-        }
-        response.writeHead(status, headers || {});
-        if (body instanceof ReadStream) {
-            await pipeline(body, response);
+        if (matchedRoute) {
+            request.params = request.url.match(matchedRoute.rule).groups;
+            let { status, headers, body } = await matchedRoute.handler({ request, app, });
+            response.writeHead(status, headers || {});
+            if (body instanceof ReadStream) {
+                await pipeline(body, response);
+            } else {
+                response.end(body);
+            }
         } else {
-            response.end(body);
+            response.writeHead(HttpCodes.NOT_FOUND, 'NOT FOUND');
+            response.end();
         }
-    } else {
-        response.writeHead(404, 'NOT FOUND');
+    } catch (e) {
+        response.writeHead(HttpCodes.INTERNAL_ERROR, {});
         response.end();
+        console.error(e);
     }
 };
 

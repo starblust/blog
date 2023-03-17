@@ -16,9 +16,10 @@ function getViewCreator({ config, shared_data = {} }) {
         if (config.cache) {
             try {
                 await access(cache_file_path);
+                console.debug(`get from cache: ${cache_file_path}`);
                 return createReadStream(cache_file_path);
             } catch (e) {
-                console.error(`file not found or no access: ${cache_file_path}`);
+                console.error(`file not found or no access: ${cache_file_path}. ${e}`);
             }
         }
         let page_path = pages_path.get(name);
